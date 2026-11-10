@@ -31,6 +31,12 @@ from app.models import (
     ColumnInfo,
     ErrorResponse,
     SubmissionPage,
+    DatasetPage,
+    EntryPage,
+    EntryDetail,
+    HistoryPage,
+    CatalogSearchResult,
+    ReportData,
 )
 from app.database import get_db_connection
 
@@ -362,3 +368,90 @@ def dev_reset():
         for item in STORAGE_DIR.iterdir():
             if item.is_file():
                 item.unlink()
+
+
+# --- V1.1 CATALOG & REPORT STUBS ---
+
+
+@app.get("/catalog/datasets", response_model=DatasetPage, tags=["catalog"])
+def list_datasets(q: str | None = None, page: int = 1, page_size: int = 10):
+    return {
+        "items": [
+            {"dataset_id": "ds_01", "name": "Konsumsi Gizi Nasional", "entry_count": 3},
+            {"dataset_id": "ds_02", "name": "PDRB Regional", "entry_count": 2},
+        ],
+        "total": 2,
+        "page": page,
+        "page_size": page_size,
+    }
+
+
+@app.get(
+    "/catalog/datasets/{dataset_id}/entries", response_model=EntryPage, tags=["catalog"]
+)
+def list_dataset_entries(dataset_id: str, page: int = 1, page_size: int = 10):
+    return {
+        "items": [
+            {
+                "entry_id": "ent_01",
+                "dataset_id": dataset_id,
+                "file_name": "gizi_2024.xlsx",
+                "source": "BPS",
+                "status": "merged",
+                "years": [2023, 2024],
+                "updated_at": datetime.now(timezone.utc),
+            }
+        ],
+        "total": 1,
+        "page": page,
+        "page_size": page_size,
+    }
+
+
+@app.get("/catalog/entries/{entry_id}", response_model=EntryDetail, tags=["catalog"])
+def get_entry_detail(entry_id: str):
+    return {
+        "entry_id": entry_id,
+        "dataset_id": "ds_01",
+        "dataset_name": "Konsumsi Gizi Nasional",
+        "file_name": "gizi_2024.xlsx",
+        "source": "BPS",
+        "status": "merged",
+        "years": [2023, 2024],
+        "updated_at": datetime.now(timezone.utc),
+        "columns": [
+            {"name": "provinsi", "data_type": "text"},
+            {"name": "kalori", "data_type": "number"},
+        ],
+    }
+
+
+@app.get(
+    "/catalog/entries/{entry_id}/history", response_model=HistoryPage, tags=["catalog"]
+)
+def get_entry_history(entry_id: str, page: int = 1, page_size: int = 10):
+    return {"items": [], "total": 0, "page": page, "page_size": page_size}
+
+
+@app.get("/catalog/search", response_model=CatalogSearchResult, tags=["catalog"])
+def catalog_search(q: str):
+    return {
+        "datasets": [
+            {"dataset_id": "ds_01", "name": "Konsumsi Gizi Nasional", "entry_count": 3}
+        ],
+        "columns": [
+            {
+                "column_name": "kalori",
+                "entry_id": "ent_01",
+                "dataset_id": "ds_01",
+                "file_name": "gizi_2024.xlsx",
+            }
+        ],
+    }
+
+
+@app.get("/reports/submissions", response_model=ReportData, tags=["reports"])
+def export_submissions_report(
+    status: SubmissionStatus | None = None, verdict: Verdict | None = None
+):
+    return {"generated_at": datetime.now(timezone.utc), "total": 0, "rows": []}

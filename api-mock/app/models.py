@@ -1,5 +1,5 @@
 from datetime import datetime
-from enum import Enum
+from enum import Enum, StrEnum
 from typing import Literal, Any
 from pydantic import BaseModel, Field
 
@@ -12,11 +12,12 @@ class Verdict(str, Enum):
     needs_review = "needs_review"
 
 
-class SubmissionStatus(str, Enum):
+class SubmissionStatus(StrEnum):
     processing = "processing"
     draft = "draft"
     accepted = "accepted"
     merged = "merged"
+    rejected = "rejected"
 
 
 class ColumnInfo(BaseModel):
@@ -55,15 +56,20 @@ class Submission(BaseModel):
     status: SubmissionStatus
     verdict: Verdict | None = None
     similarity: float | None = Field(default=None, ge=0, le=1)
-
-
-class SubmissionDetail(Submission):
-    proposal: Proposal | None = None
+    matched_file_name: str | None = None
+    reason_short: str | None = Field(default=None, max_length=120)
 
 
 class HealthResponse(BaseModel):
     status: Literal["ok"]
     version: str
+    contract_version: str = "1.1.0"
+    features: list[Literal["queue", "catalog", "history", "report"]] = [
+        "queue",
+        "catalog",
+        "history",
+        "report",
+    ]
 
 
 # Job status tracking for background processing
@@ -95,3 +101,100 @@ class SubmissionPage(BaseModel):
     total: int
     page: int
     page_size: int
+
+
+class EntryStatus(StrEnum):
+    draft = "draft"
+    accepted = "accepted"
+    merged = "merged"
+
+
+class DatasetSummary(BaseModel):
+    dataset_id: str
+    name: str
+
+
+class EntrySummary(BaseModel):
+    entry_id: str
+    dataset_id: str
+    file_name: str
+    source: str | None = None
+    status: EntryStatus
+    years: list[int]
+    updated_at: datetime
+
+
+class EntryDetail(EntrySummary):
+    dataset_name: str
+    columns: list[dict]  # or ColumnInfo list
+
+
+class EntrySnapshot(BaseModel):
+    source: str | None = None
+    years: list[int]
+    columns: list[dict]
+
+
+class HistoryEvent(BaseModel):
+    event_id: str
+    entry_id: str
+    submission_id: str | None = None
+    action: str
+    decided_by: str | None = None
+    decided_at: datetime
+    before: EntrySnapshot | None = None
+    after: EntrySnapshot | None = None
+
+
+class DecisionRecord(BaseModel):
+    action: Literal["accept", "reject"]
+    verdict: Verdict | None = None
+    target_entry_id: str | None = None
+    note: str | None = None
+    decided_by: str | None = Field(default=None, max_length=80)
+    decided_at: datetime
+
+
+class SubmissionDetail(Submission):
+    proposal: Proposal | None = None
+    decision: DecisionRecord | None = None
+
+
+class ReportData(BaseModel):
+    generated_at: datetime
+    total: int
+    rows: list[dict]
+
+
+# Paginated Responses for Catalog
+class DatasetPage(BaseModel):
+    items: list[DatasetSummary]
+    total: int
+    page: int
+    page_size: int
+
+
+class EntryPage(BaseModel):
+    items: list[EntrySummary]
+    total: int
+    page: int
+    page_size: int
+
+
+class HistoryPage(BaseModel):
+    items: list[HistoryEvent]
+    total: int
+    page: int
+    page_size: int
+
+
+class ColumnHit(BaseModel):
+    column_name: str
+    entry_id: str
+    dataset_id: str
+    file_name: str
+
+
+class CatalogSearchResult(BaseModel):
+    datasets: list[DatasetSummary]
+    columns: list[ColumnHit]
