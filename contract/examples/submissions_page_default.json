@@ -1,0 +1,18 @@
+{
+  "items": [
+    {
+      "id": "sub_45205371",
+      "file_name": "_sample_files_xlsx_sample_file_xlsx_512kb.xlsx",
+      "sheet": "1",
+      "size_bytes": 617630,
+      "sha256": "4520537175f3f92e995d7c609e639e004701bd63a189310097502d832ad854cf",
+      "status": "draft",
+      "verdict": "new_dataset",
+      "similarity": 0,
+      "uploaded_at": "2026-11-10T13:48:03.623868+07:00"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "page_size": 10
+}

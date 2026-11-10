@@ -1,0 +1,28 @@
+{
+  "id": "sub_2604aea0",
+  "file_name": "_sample_files_xlsx_sample_file_xlsx_2048kb.xlsx",
+  "sheet": "1",
+  "size_bytes": 2430675,
+  "uploaded_at": "2026-11-10T13:52:03.382295+07:00",
+  "status": "draft",
+  "verdict": "needs_review",
+  "similarity": 0.65,
+  "proposal": {
+    "verdict": "needs_review",
+    "similarity": 0.65,
+    "reason": "Retrieved from PostgreSQL database record",
+    "incoming": {
+      "columns": [
+        {
+          "name": "column_name",
+          "element_name": null,
+          "data_type": "text"
+        }
+      ],
+      "years": [
+        2026
+      ]
+    },
+    "matched": null
+  }
+}
