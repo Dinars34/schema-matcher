@@ -9,6 +9,12 @@ test('requires a reviewer name, resolves needs-review, and refreshes the queue b
   await page.locator('#reviewer-name').fill('');
 
   const { submissionId } = await uploadFromPage(page, 'needs_review', 'review.xlsx');
+  await expect(page.locator('.review-summary')).toContainText('Alasan judge');
+  await expect(page.locator('.review-summary')).toContainText(
+    'Hasil pencocokan memerlukan peninjauan manual.',
+  );
+  await expect(page.locator('.review-summary')).toContainText('Entri katalog yang cocok');
+  await expect(page.getByRole('heading', { name: 'Entri katalog yang cocok' })).toBeVisible();
   const acceptButton = page.getByRole('button', { name: 'Terima' });
   await expect(acceptButton).toBeDisabled();
   const missingVerdictResponse = await request.post(

@@ -6,6 +6,16 @@ test('uploads a workbook, follows job progress, and reads persisted bytes and pr
   request,
 }) => {
   const { bytes, submissionId, jobId } = await uploadFromPage(page, 'new_dataset');
+  await expect(page.locator('.review-summary')).toContainText('Alasan judge');
+  await expect(page.locator('.review-summary')).toContainText(
+    'Tidak ditemukan dataset yang cukup serupa.',
+  );
+  await expect(page.locator('.review-summary')).toContainText(
+    'Tidak ada entri katalog yang dipasangkan.',
+  );
+  await expect(page.getByRole('heading', { name: 'Entri katalog yang cocok' })).toBeVisible();
+  await expect(page.getByText('Proposal tidak menunjuk ke entri katalog tertentu.')).toBeVisible();
+
   const detailResponse = await request.get(`${API_URL}/submissions/${submissionId}`);
   expect(detailResponse.ok()).toBeTruthy();
   const detail = await detailResponse.json();

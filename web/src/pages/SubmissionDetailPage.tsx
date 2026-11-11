@@ -140,15 +140,32 @@ export default function SubmissionDetailPage() {
 
       <Card>
         <h2>Ringkasan submission</h2>
-        <p>Status: {detail.status}</p>
-        <p>Diunggah: {new Date(detail.uploaded_at).toLocaleString()}</p>
-        {detail.decision && (
-          <p>
-            Keputusan: {detail.decision.action} oleh {detail.decision.decided_by || '—'} pada{' '}
-            {new Date(detail.decision.decided_at).toLocaleString()}
-          </p>
-        )}
-        {proposal && <p style={{ marginBottom: 0 }}>{proposal.reason}</p>}
+        <dl className="review-summary">
+          <div>
+            <dt>Status</dt>
+            <dd>{detail.status}</dd>
+          </div>
+          <div>
+            <dt>Diunggah</dt>
+            <dd>{new Date(detail.uploaded_at).toLocaleString()}</dd>
+          </div>
+          <div>
+            <dt>Keputusan</dt>
+            <dd>
+              {detail.decision
+                ? `${detail.decision.action} oleh ${detail.decision.decided_by || '—'} pada ${new Date(detail.decision.decided_at).toLocaleString()}`
+                : 'Belum ada keputusan reviewer.'}
+            </dd>
+          </div>
+          <div className="wide">
+            <dt>Alasan judge</dt>
+            <dd>{proposal?.reason ?? detail.reason_short ?? 'Alasan judge belum tersedia dari server.'}</dd>
+          </div>
+          <div className="wide">
+            <dt>Entri katalog yang cocok</dt>
+            <dd>{proposal?.matched?.dataset ?? 'Tidak ada entri katalog yang dipasangkan.'}</dd>
+          </div>
+        </dl>
       </Card>
 
       {!proposal && (
@@ -167,11 +184,10 @@ export default function SubmissionDetailPage() {
             </p>
           </Card>
           <Card>
-            <h2>
-              {proposal.matched?.dataset ?? 'Tidak ada entri katalog yang dipasangkan'}
-            </h2>
+            <h2>Entri katalog yang cocok</h2>
             {proposal.matched ? (
               <>
+                <p className="review-match-name">{proposal.matched.dataset}</p>
                 <p className="mono">Entry ID: {proposal.matched.entry_id}</p>
                 <Table headers={['Kolom', 'Tipe']} rows={catalogRows} />
                 <p className="mu" style={{ marginTop: '12px' }}>

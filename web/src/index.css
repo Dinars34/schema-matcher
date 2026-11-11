@@ -391,6 +391,38 @@ tr.sel td {
   gap: 24px;
 }
 
+.review-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 24px;
+  margin: 0;
+}
+
+.review-summary > div {
+  min-width: 0;
+}
+
+.review-summary .wide {
+  grid-column: 1 / -1;
+}
+
+.review-summary dt {
+  color: var(--mu);
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.review-summary dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.review-match-name {
+  font-weight: 500;
+  margin: 0 0 4px;
+}
+
 .g3 {
   display: grid;
   grid-template-columns: 1fr 1fr 1.6fr;
@@ -704,6 +736,12 @@ h3 {
   .gf,
   .catalog {
     grid-template-columns: 1fr;
+  }
+  .review-summary {
+    grid-template-columns: 1fr;
+  }
+  .review-summary .wide {
+    grid-column: auto;
   }
 }
 
