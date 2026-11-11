@@ -8,8 +8,21 @@ import { useApiFeature } from '../hooks/useApiFeature';
 import { Card, PageHeader } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { Table } from '../components/common/Table';
+import { Badge } from '../components/common/Badge';
+import type { CatalogEntryItem } from '../api/catalog';
 
 const PAGE_SIZE = 10;
+
+function statusVariant(status: CatalogEntryItem['status']) {
+  return status === 'accepted' || status === 'merged' ? 'success' : 'neutral';
+}
+
+function formatDate(value: string) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? '—'
+    : date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+}
 
 export default function CatalogPage() {
   const navigate = useNavigate();
@@ -54,14 +67,16 @@ export default function CatalogPage() {
 
   const datasets = datasetsQuery.data?.items ?? [];
   const entries = entriesQuery.data?.items ?? [];
+  const entriesTotal = entriesQuery.data?.total ?? 0;
   const total = datasetsQuery.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const selectedDataset = datasets.find((dataset) => dataset.dataset_id === selectedDatasetId);
   const entry = entryQuery.data;
   const columnRows = (entry?.columns ?? []).map((column, index) => ({
     key: `${column.name}-${index}`,
     cells: [
-      <span style={{ fontWeight: 500 }}>{column.name}</span>,
-      <span className="mono">{column.data_type}</span>,
+      <span className="col-name">{column.name}</span>,
+      <span className="type-tag">{column.data_type}</span>,
     ],
   }));
 
@@ -89,99 +104,165 @@ export default function CatalogPage() {
         />
       </div>
 
-      <div className="g3">
-        <Card>
-          <h2>Dataset</h2>
+      <div className="catalog">
+        <Card className="pane">
+          <div className="pane-hd">
+            <h2>Dataset</h2>
+            {datasetsQuery.isSuccess && <span className="count">{total}</span>}
+          </div>
           {datasetsQuery.isPending && <p className="mu">Memuat katalog...</p>}
           {datasetsQuery.isError && (
-            <p role="alert" style={{ color: 'var(--ert)' }}>
+            <p role="alert" className="pane-error">
               Gagal memuat katalog: {datasetsQuery.error.message}
             </p>
           )}
           {datasetsQuery.isSuccess && datasets.length === 0 && (
             <p className="mu">Tidak ada dataset yang cocok.</p>
           )}
-          {datasets.map((dataset) => (
-            <Button
-              key={dataset.dataset_id}
-              aria-pressed={selectedDatasetId === dataset.dataset_id}
-              onClick={() => {
-                setSelectedDatasetId(dataset.dataset_id);
-                setSelectedEntryId(null);
-              }}
-              style={{ width: '100%', justifyContent: 'space-between', marginBottom: '8px' }}
-            >
-              <span>{dataset.name}</span>
-              <span className="mono">{dataset.entry_count}</span>
-            </Button>
-          ))}
-          <div className="catalog-pagination">
-            <span className="mu">{total} dataset · {page}/{totalPages}</span>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <Button size="sm" disabled={page <= 1} onClick={() => setPage((value) => value - 1)}>
-                Sebelumnya
-              </Button>
-              <Button
-                size="sm"
-                disabled={page >= totalPages}
-                onClick={() => setPage((value) => value + 1)}
-              >
-                Selanjutnya
-              </Button>
+          {datasets.length > 0 && (
+            <ul className="pick-list">
+              {datasets.map((dataset) => (
+                <li key={dataset.dataset_id}>
+                  <button
+                    type="button"
+                    className="pick"
+                    aria-pressed={selectedDatasetId === dataset.dataset_id}
+                    onClick={() => {
+                      setSelectedDatasetId(dataset.dataset_id);
+                      setSelectedEntryId(null);
+                    }}
+                  >
+                    <span className="pick-title" title={dataset.name}>{dataset.name}</span>
+                    <span className="pick-meta">
+                      {dataset.entry_count} entri
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {totalPages > 1 && (
+            <div className="pager">
+              <span className="mu">Hal. {page} dari {totalPages}</span>
+              <div className="pager-btns">
+                <Button
+                  size="sm"
+                  aria-label="Halaman sebelumnya"
+                  disabled={page <= 1}
+                  onClick={() => setPage((value) => value - 1)}
+                >
+                  ‹
+                </Button>
+                <Button
+                  size="sm"
+                  aria-label="Halaman selanjutnya"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage((value) => value + 1)}
+                >
+                  ›
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
         </Card>
 
-        <Card>
-          <h2>Entri</h2>
+        <Card className="pane">
+          <div className="pane-hd">
+            <h2>Entri</h2>
+            {entriesQuery.isSuccess && <span className="count">{entriesTotal}</span>}
+          </div>
+          {selectedDataset && (
+            <p className="pane-sub" title={selectedDataset.name}>{selectedDataset.name}</p>
+          )}
           {!selectedDatasetId && <p className="mu">Pilih dataset untuk melihat entrinya.</p>}
           {selectedDatasetId && entriesQuery.isPending && <p className="mu">Memuat entri...</p>}
           {entriesQuery.isError && (
-            <p role="alert" style={{ color: 'var(--ert)' }}>
+            <p role="alert" className="pane-error">
               Gagal memuat entri: {entriesQuery.error.message}
             </p>
           )}
           {entriesQuery.isSuccess && entries.length === 0 && (
             <p className="mu">Dataset ini belum memiliki entri.</p>
           )}
-          {entries.map((item) => (
+          {entries.length > 0 && (
+            <ul className="pick-list">
+              {entries.map((item) => (
+                <li key={item.entry_id}>
+                  <button
+                    type="button"
+                    className="pick"
+                    aria-pressed={selectedEntryId === item.entry_id}
+                    onClick={() => setSelectedEntryId(item.entry_id)}
+                  >
+                    <span className="pick-title" title={item.file_name}>{item.file_name}</span>
+                    <span className="pick-row">
+                      <Badge label={item.status} variant={statusVariant(item.status)} />
+                      <span className="pick-meta">
+                        {item.years.length > 0 ? `Tahun ${item.years.join(', ')} · ` : ''}
+                        {formatDate(item.updated_at)}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {selectedDatasetId && entriesTotal > entries.length && (
             <Button
-              key={item.entry_id}
-              aria-pressed={selectedEntryId === item.entry_id}
-              onClick={() => setSelectedEntryId(item.entry_id)}
-              style={{ width: '100%', justifyContent: 'space-between', marginBottom: '8px' }}
+              size="sm"
+              className="pane-more"
+              onClick={() =>
+                navigate(`/catalog/datasets/${encodeURIComponent(selectedDatasetId)}/entries`)
+              }
             >
-              <span>{item.file_name}</span>
-              <span className="mu">{item.status}</span>
+              Lihat semua {entriesTotal} entri
             </Button>
-          ))}
+          )}
         </Card>
 
-        <Card>
-          <h2>Detail Entri</h2>
+        <Card className="pane detail">
+          <div className="pane-hd">
+            <h2>Detail Entri</h2>
+            {entry && <Badge label={entry.status} variant={statusVariant(entry.status)} />}
+          </div>
           {!selectedEntryId && <p className="mu">Pilih entri untuk melihat detailnya.</p>}
           {selectedEntryId && entryQuery.isPending && <p className="mu">Memuat detail entri...</p>}
           {entryQuery.isError && (
-            <p role="alert" style={{ color: 'var(--ert)' }}>
+            <p role="alert" className="pane-error">
               Gagal memuat detail entri: {entryQuery.error.message}
             </p>
           )}
           {entry && (
             <>
-              <dl className="catalog-detail">
-                <dt>ID entri</dt><dd className="mono">{entry.entry_id}</dd>
-                <dt>File sumber</dt><dd>{entry.file_name}</dd>
-                <dt>Sumber data</dt><dd>{entry.source || '—'}</dd>
-                <dt>Status</dt><dd>{entry.status}</dd>
-                <dt>Tahun</dt><dd>{entry.years.length ? entry.years.join(', ') : '—'}</dd>
+              <p className="detail-title">{entry.file_name}</p>
+              <dl className="facts">
+                <div className="wide">
+                  <dt>ID entri</dt>
+                  <dd className="mono">{entry.entry_id}</dd>
+                </div>
+                <div>
+                  <dt>Sumber data</dt>
+                  <dd>{entry.source || '—'}</dd>
+                </div>
+                <div>
+                  <dt>Tahun</dt>
+                  <dd>{entry.years.length ? entry.years.join(', ') : '—'}</dd>
+                </div>
+                <div className="wide">
+                  <dt>Terakhir diperbarui</dt>
+                  <dd>{formatDate(entry.updated_at)}</dd>
+                </div>
               </dl>
-              <h3>Kolom</h3>
+              <div className="pane-hd sub">
+                <h3>Kolom</h3>
+                <span className="count">{columnRows.length}</span>
+              </div>
               {columnRows.length > 0
                 ? <Table headers={['Nama kolom', 'Tipe data']} rows={columnRows} />
                 : <p className="mu">Tidak ada kolom tercatat.</p>}
               {historyFeature.available && (
                 <Button
-                  style={{ marginTop: '16px' }}
+                  className="pane-action"
                   onClick={() => navigate(`/catalog/entries/${encodeURIComponent(entry.entry_id)}/history`)}
                 >
                   Lihat Riwayat Audit

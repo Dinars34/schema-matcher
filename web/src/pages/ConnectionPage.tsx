@@ -4,75 +4,96 @@ import { API_BASE_URL, fetchHealth } from '../api/client';
 import { queryKeys } from '../api/queryKeys';
 import { Card, PageHeader } from '../components/common/Card';
 import { Button } from '../components/common/Button';
+import { Badge } from '../components/common/Badge';
+
+const REVIEWER_STORAGE_KEY = 'reviewer_name';
+
+function displayServerUrl(baseUrl: string): string {
+  try {
+    return new URL(baseUrl, window.location.origin).href.replace(/\/$/, '');
+  } catch {
+    return baseUrl;
+  }
+}
 
 export default function ConnectionPage() {
   const [reviewerName, setReviewerName] = useState(
-    () => localStorage.getItem('reviewer_name') ?? '',
+    () => localStorage.getItem(REVIEWER_STORAGE_KEY) ?? '',
   );
-  const [saved, setSaved] = useState(false);
   const healthQuery = useQuery({
     queryKey: queryKeys.health,
     queryFn: ({ signal }) => fetchHealth(signal),
   });
 
-  const saveReviewerName = () => {
-    const name = reviewerName.trim();
-    if (!name) {
-      localStorage.removeItem('reviewer_name');
-      setReviewerName('');
+  const updateReviewerName = (value: string) => {
+    setReviewerName(value);
+    const name = value.trim();
+    if (name) {
+      localStorage.setItem(REVIEWER_STORAGE_KEY, name);
     } else {
-      localStorage.setItem('reviewer_name', name);
-      setReviewerName(name);
+      localStorage.removeItem(REVIEWER_STORAGE_KEY);
     }
-    setSaved(true);
   };
+
+  const connection = healthQuery.isFetching
+    ? { label: 'Memeriksa…', variant: 'running' as const }
+    : healthQuery.isError
+      ? { label: 'Tidak terhubung', variant: 'error' as const }
+      : healthQuery.data
+        ? { label: 'Terhubung', variant: 'success' as const }
+        : { label: 'Belum diuji', variant: 'neutral' as const };
 
   return (
     <>
-      <PageHeader title="Koneksi & Pengaturan">
-        <Button size="sm" onClick={() => void healthQuery.refetch()} disabled={healthQuery.isFetching}>
-          {healthQuery.isFetching ? 'Memeriksa...' : 'Periksa server'}
-        </Button>
-      </PageHeader>
+      <PageHeader title="Pengaturan" />
 
-      <Card>
-        <h2>Koneksi API</h2>
-        <p>Base URL: <code>{API_BASE_URL}</code></p>
-        {healthQuery.isPending && <p className="mu">Memeriksa koneksi server...</p>}
-        {healthQuery.isError && (
-          <p role="alert" style={{ color: 'var(--ert)' }}>
+      <Card className="settings">
+        <div className="field">
+          <label htmlFor="server-url">URL server</label>
+          <input
+            id="server-url"
+            value={displayServerUrl(API_BASE_URL)}
+            readOnly
+            title="Diatur saat build melalui VITE_API_BASE_URL"
+          />
+        </div>
+
+        <div className="field">
+          <label htmlFor="reviewer-name">Nama reviewer</label>
+          <input
+            id="reviewer-name"
+            value={reviewerName}
+            placeholder="Nama pengguna"
+            maxLength={100}
+            autoComplete="name"
+            aria-describedby="reviewer-name-hint"
+            onChange={(event) => updateReviewerName(event.target.value)}
+          />
+          <p id="reviewer-name-hint" className="hint">
+            Dicantumkan pada keputusan manual. Tersimpan otomatis di browser ini.
+          </p>
+        </div>
+
+        <div className="settings-actions">
+          <Button onClick={() => void healthQuery.refetch()} disabled={healthQuery.isFetching}>
+            Uji koneksi
+          </Button>
+          <span aria-live="polite">
+            <Badge label={connection.label} variant={connection.variant} />
+          </span>
+        </div>
+
+        {healthQuery.isError && !healthQuery.isFetching && (
+          <p role="alert" className="settings-error">
             Server tidak dapat dihubungi: {healthQuery.error.message}
           </p>
         )}
-        {healthQuery.data && (
-          <>
-            <p role="status">Status: {healthQuery.data.status}</p>
-            <p>Versi server: {healthQuery.data.version}</p>
-            <p>Versi kontrak: {healthQuery.data.contract_version}</p>
-            <p>Fitur yang didukung: {healthQuery.data.features.join(', ') || 'Tidak ada fitur yang diumumkan.'}</p>
-          </>
+        {healthQuery.data && !healthQuery.isError && (
+          <p className="hint">
+            Versi server {healthQuery.data.version} · Kontrak {healthQuery.data.contract_version} ·
+            Fitur: {healthQuery.data.features.join(', ') || 'tidak ada yang diumumkan'}
+          </p>
         )}
-      </Card>
-
-      <Card>
-        <h2>Reviewer</h2>
-        <p className="mu">
-          Nama ini dicantumkan sebagai pelaku keputusan manual dan disimpan hanya di browser ini.
-        </p>
-        <label htmlFor="reviewer-name">Nama reviewer</label>
-        <input
-          id="reviewer-name"
-          value={reviewerName}
-          maxLength={100}
-          onChange={(event) => {
-            setReviewerName(event.target.value);
-            setSaved(false);
-          }}
-        />
-        <div className="end">
-          {saved && <span role="status">Pengaturan tersimpan.</span>}
-          <Button variant="primary" onClick={saveReviewerName}>Simpan nama</Button>
-        </div>
       </Card>
     </>
   );

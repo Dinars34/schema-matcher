@@ -7,7 +7,6 @@ test('requires a reviewer name, resolves needs-review, and refreshes the queue b
 }) => {
   await page.goto('/settings');
   await page.locator('#reviewer-name').fill('');
-  await page.getByRole('button', { name: 'Simpan nama' }).click();
 
   const { submissionId } = await uploadFromPage(page, 'needs_review', 'review.xlsx');
   const acceptButton = page.getByRole('button', { name: 'Terima' });
@@ -27,7 +26,8 @@ test('requires a reviewer name, resolves needs-review, and refreshes the queue b
 
   await page.getByRole('link', { name: 'Pengaturan' }).click();
   await page.locator('#reviewer-name').fill('Playwright Reviewer');
-  await page.getByRole('button', { name: 'Simpan nama' }).click();
+  await page.reload();
+  await expect(page.locator('#reviewer-name')).toHaveValue('Playwright Reviewer');
   await page.goto(`/submissions/${submissionId}`);
   await page.getByRole('button', { name: 'Ubah verdict' }).click();
   await page.locator('#manual-verdict').selectOption('enrichment');

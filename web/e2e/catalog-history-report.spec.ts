@@ -55,10 +55,13 @@ test('browses dataset to entry history and downloads a filtered report', async (
   const datasetButton = page.getByRole('button', { name: /Dataset catalog\.xlsx/ });
   await expect(datasetButton).toHaveCount(1);
   await datasetButton.click();
-  const entryButton = page.getByRole('button', { name: 'catalog.xlsx accepted' });
+  await expect(datasetButton).toHaveAttribute('aria-pressed', 'true');
+  const entryButton = page.getByRole('button', { name: /^catalog\.xlsx accepted/ });
   await expect(entryButton).toBeVisible();
   await entryButton.click();
+  await expect(entryButton).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByText(entryId)).toBeVisible();
+  await expect(page.getByText('Terakhir diperbarui')).toBeVisible();
   await page.getByRole('button', { name: 'Lihat Riwayat Audit' }).click();
   await expect(page.getByText('Seed Reviewer')).toBeVisible();
 

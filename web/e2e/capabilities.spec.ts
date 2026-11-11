@@ -30,5 +30,30 @@ test('shows a truthful disconnected state when health checks fail', async ({ pag
   await page.goto('/settings');
   await expect(page.getByRole('status')).toContainText('Server tidak terhubung');
   await expect(page.getByRole('alert')).toContainText('Server tidak dapat dihubungi');
+  await expect(page.locator('.settings-actions')).toContainText('Tidak terhubung');
   await expect(page.getByRole('link', { name: 'Katalog' })).toHaveCount(0);
+});
+
+test('settings shows the server URL, persists the reviewer, and re-tests the connection', async ({
+  page,
+}) => {
+  let healthCalls = 0;
+  await page.route('**/api/health', async (route) => {
+    healthCalls += 1;
+    await route.continue();
+  });
+  await page.goto('/settings');
+  await expect(page.getByRole('heading', { level: 1, name: 'Pengaturan' })).toBeVisible();
+  await expect(page.getByLabel('URL server')).toHaveValue(/\/api$/);
+  await expect(page.getByLabel('URL server')).toHaveAttribute('readonly', '');
+  await expect(page.locator('.settings-actions')).toContainText('Terhubung');
+
+  await page.getByLabel('Nama reviewer').fill('Settings Reviewer');
+  await page.reload();
+  await expect(page.getByLabel('Nama reviewer')).toHaveValue('Settings Reviewer');
+
+  const callsBeforeTest = healthCalls;
+  await page.getByRole('button', { name: 'Uji koneksi' }).click();
+  await expect.poll(() => healthCalls).toBeGreaterThan(callsBeforeTest);
+  await expect(page.locator('.settings-actions')).toContainText('Terhubung');
 });
