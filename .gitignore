@@ -1,7 +1,7 @@
 .venv/
 __pycache__/
 *.pyc
-api-mock/data/uploads/
+api-mock/data/
 node_modules/
 out/
 dist/
