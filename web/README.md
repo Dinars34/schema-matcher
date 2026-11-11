@@ -31,7 +31,10 @@ npm --prefix web run dev
 
 For a deployed UI, set `VITE_API_BASE_URL` to the API's reachable base URL
 before building. If the browser calls a different origin, that server must
-allow the UI origin; a same-origin reverse proxy is also suitable.
+allow the UI origin; a same-origin reverse proxy is also suitable. The URL can
+also be changed on the Pengaturan page; choosing **Uji koneksi** saves that
+override in the current browser and refreshes active data from the selected API.
+The browser override takes precedence over `VITE_API_BASE_URL`.
 
 ## Contract types and API behavior
 

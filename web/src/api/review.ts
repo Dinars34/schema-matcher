@@ -1,4 +1,4 @@
-import { apiClient, toApiRequestError } from './client';
+import { createApiClient, toApiRequestError } from './client';
 import type { components } from './schema';
 
 export type SubmissionDetail = components['schemas']['SubmissionDetail'];
@@ -7,7 +7,7 @@ export type DecisionPayload = components['schemas']['DecisionRequest'];
 export type DecisionResponse = components['schemas']['DecisionResponse'];
 
 export async function fetchSubmissionDetail(id: string, signal?: AbortSignal): Promise<SubmissionDetail> {
-  const { data, error, response } = await apiClient.GET('/submissions/{submission_id}', {
+  const { data, error, response } = await createApiClient().GET('/submissions/{submission_id}', {
     params: { path: { submission_id: id } },
     signal,
   });
@@ -19,7 +19,7 @@ export async function submitDecision(
   id: string,
   payload: DecisionPayload,
 ): Promise<DecisionResponse> {
-  const { data, error, response } = await apiClient.POST(
+  const { data, error, response } = await createApiClient().POST(
     '/submissions/{submission_id}/decision',
     { params: { path: { submission_id: id } }, body: payload },
   );

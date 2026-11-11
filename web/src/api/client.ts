@@ -4,8 +4,20 @@ import type { paths, components } from './schema';
 export type ApiHealth = components['schemas']['HealthResponse'];
 export type ApiErrorResponse = components['schemas']['ErrorResponse'];
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
-export const apiClient = createClient<paths>({ baseUrl: API_BASE_URL });
+const API_BASE_URL_STORAGE_KEY = 'api_base_url';
+const DEFAULT_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+
+export function getApiBaseUrl(): string {
+  return localStorage.getItem(API_BASE_URL_STORAGE_KEY)?.trim() || DEFAULT_API_BASE_URL;
+}
+
+export function setApiBaseUrl(baseUrl: string): void {
+  localStorage.setItem(API_BASE_URL_STORAGE_KEY, baseUrl);
+}
+
+export function createApiClient() {
+  return createClient<paths>({ baseUrl: getApiBaseUrl() });
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -54,7 +66,7 @@ export function toApiRequestError(error: unknown, status: number): ApiRequestErr
 }
 
 export async function fetchHealth(signal?: AbortSignal): Promise<ApiHealth> {
-  const { data, response } = await apiClient.GET('/health', { signal });
+  const { data, response } = await createApiClient().GET('/health', { signal });
   if (!data) {
     throw new ApiRequestError('Server tidak mengembalikan status kesehatan.', response.status);
   }

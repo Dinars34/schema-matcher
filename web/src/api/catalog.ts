@@ -1,4 +1,4 @@
-import { apiClient, toApiRequestError } from './client';
+import { createApiClient, toApiRequestError } from './client';
 import type { components } from './schema';
 
 export type CatalogDatasetItem = components['schemas']['DatasetSummary'];
@@ -16,7 +16,7 @@ export async function fetchCatalogEntries(
   filters: DatasetFilters = {},
   signal?: AbortSignal,
 ): Promise<CatalogResponse> {
-  const { data, error, response } = await apiClient.GET('/catalog/datasets', {
+  const { data, error, response } = await createApiClient().GET('/catalog/datasets', {
     params: { query: filters },
     signal,
   });
@@ -30,7 +30,7 @@ export async function fetchDatasetEntries(
   pageSize = 10,
   signal?: AbortSignal,
 ): Promise<CatalogEntryPage> {
-  const { data, error, response } = await apiClient.GET(
+  const { data, error, response } = await createApiClient().GET(
     '/catalog/datasets/{dataset_id}/entries',
     {
       params: {

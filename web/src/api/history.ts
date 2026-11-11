@@ -1,4 +1,4 @@
-import { apiClient, toApiRequestError } from './client';
+import { createApiClient, toApiRequestError } from './client';
 import type { components } from './schema';
 
 export type HistoryEvent = components['schemas']['HistoryEvent'];
@@ -14,7 +14,7 @@ export async function fetchEntryHistory(
   filters: HistoryFilters = {},
   signal?: AbortSignal,
 ): Promise<HistoryPage> {
-  const { data, error, response } = await apiClient.GET(
+  const { data, error, response } = await createApiClient().GET(
     '/catalog/entries/{entry_id}/history',
     {
       params: {

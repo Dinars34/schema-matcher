@@ -1,4 +1,4 @@
-import { apiClient, toApiRequestError } from './client';
+import { createApiClient, toApiRequestError } from './client';
 import type { components } from './schema';
 import type { SubmissionFilters } from './submissions';
 
@@ -13,7 +13,7 @@ export async function fetchSubmissionReport(
   filters: ReportFilters = {},
   signal?: AbortSignal,
 ): Promise<ReportResponse> {
-  const { data, error, response } = await apiClient.GET('/reports/submissions', {
+  const { data, error, response } = await createApiClient().GET('/reports/submissions', {
     params: { query: filters },
     signal,
   });

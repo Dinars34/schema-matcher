@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { API_BASE_URL, fetchHealth } from '../api/client';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { fetchHealth, getApiBaseUrl, setApiBaseUrl } from '../api/client';
 import { queryKeys } from '../api/queryKeys';
 import { Card, PageHeader } from '../components/common/Card';
 import { Button } from '../components/common/Button';
@@ -16,7 +16,31 @@ function displayServerUrl(baseUrl: string): string {
   }
 }
 
+function normalizeServerUrl(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  try {
+    const url = new URL(trimmed, window.location.origin);
+    if (
+      (url.protocol !== 'http:' && url.protocol !== 'https:') ||
+      (!trimmed.startsWith('/') && !/^https?:\/\//i.test(trimmed)) ||
+      url.search ||
+      url.hash
+    ) {
+      return null;
+    }
+    return trimmed.replace(/\/+$/, '') || '/';
+  } catch {
+    return null;
+  }
+}
+
 export default function ConnectionPage() {
+  const queryClient = useQueryClient();
+  const [apiBaseUrl, updateApiBaseUrl] = useState(getApiBaseUrl);
+  const [serverUrl, setServerUrl] = useState(() => displayServerUrl(apiBaseUrl));
+  const [serverUrlError, setServerUrlError] = useState('');
   const [reviewerName, setReviewerName] = useState(
     () => localStorage.getItem(REVIEWER_STORAGE_KEY) ?? '',
   );
@@ -43,6 +67,25 @@ export default function ConnectionPage() {
         ? { label: 'Terhubung', variant: 'success' as const }
         : { label: 'Belum diuji', variant: 'neutral' as const };
 
+  const testConnection = async () => {
+    const normalizedUrl = normalizeServerUrl(serverUrl);
+    if (!normalizedUrl) {
+      setServerUrlError('Masukkan URL http(s) lengkap atau path relatif seperti /api.');
+      return;
+    }
+
+    setServerUrlError('');
+    if (normalizedUrl !== apiBaseUrl) {
+      setApiBaseUrl(normalizedUrl);
+      updateApiBaseUrl(normalizedUrl);
+      setServerUrl(displayServerUrl(normalizedUrl));
+      await queryClient.invalidateQueries();
+      return;
+    }
+
+    await healthQuery.refetch();
+  };
+
   return (
     <>
       <PageHeader title="Pengaturan" />
@@ -52,10 +95,16 @@ export default function ConnectionPage() {
           <label htmlFor="server-url">URL server</label>
           <input
             id="server-url"
-            value={displayServerUrl(API_BASE_URL)}
-            readOnly
-            title="Diatur saat build melalui VITE_API_BASE_URL"
+            value={serverUrl}
+            placeholder="https://server.example.com/api"
+            autoComplete="url"
+            aria-describedby="server-url-hint"
+            aria-invalid={Boolean(serverUrlError)}
+            onChange={(event) => setServerUrl(event.target.value)}
           />
+          <p id="server-url-hint" className="hint">
+            Tempel URL server, lalu pilih “Uji koneksi” untuk menyimpan dan menggunakannya.
+          </p>
         </div>
 
         <div className="field">
@@ -75,7 +124,7 @@ export default function ConnectionPage() {
         </div>
 
         <div className="settings-actions">
-          <Button onClick={() => void healthQuery.refetch()} disabled={healthQuery.isFetching}>
+          <Button onClick={() => void testConnection()} disabled={healthQuery.isFetching}>
             Uji koneksi
           </Button>
           <span aria-live="polite">
@@ -83,6 +132,11 @@ export default function ConnectionPage() {
           </span>
         </div>
 
+        {serverUrlError && (
+          <p role="alert" className="settings-error">
+            {serverUrlError}
+          </p>
+        )}
         {healthQuery.isError && !healthQuery.isFetching && (
           <p role="alert" className="settings-error">
             Server tidak dapat dihubungi: {healthQuery.error.message}

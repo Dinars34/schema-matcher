@@ -1,4 +1,4 @@
-import { apiClient, toApiRequestError } from './client';
+import { createApiClient, toApiRequestError } from './client';
 import type { components } from './schema';
 
 export type CatalogColumn = components['schemas']['ColumnInfo'];
@@ -8,7 +8,7 @@ export async function fetchCatalogEntryDetail(
   entryId: string,
   signal?: AbortSignal,
 ): Promise<CatalogDetailEntry> {
-  const { data, error, response } = await apiClient.GET('/catalog/entries/{entry_id}', {
+  const { data, error, response } = await createApiClient().GET('/catalog/entries/{entry_id}', {
     params: { path: { entry_id: entryId } },
     signal,
   });

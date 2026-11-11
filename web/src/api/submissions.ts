@@ -1,4 +1,4 @@
-import { apiClient, toApiRequestError } from './client';
+import { createApiClient, toApiRequestError } from './client';
 import type { components } from './schema';
 
 export type SubmissionItem = components['schemas']['Submission'];
@@ -20,7 +20,7 @@ export async function fetchSubmissions(
   filters: SubmissionFilters = {},
   signal?: AbortSignal,
 ): Promise<SubmissionPageResponse> {
-  const { data, error, response } = await apiClient.GET('/submissions', {
+  const { data, error, response } = await createApiClient().GET('/submissions', {
     params: { query: filters },
     signal,
   });
