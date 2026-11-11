@@ -1,67 +1,107 @@
 # Schema Matcher API Contract (v1.1.0)
 
-This document defines the interface and business rules for the Schema Matcher backend service. Contract v1.1.0 is strictly additive relative to v1.0.0.
+This document describes the compatibility baseline used by the mock API. It
+does not claim that a real server has been verified against these behaviors.
+The real-server owner was unavailable during this implementation; assumptions
+and known divergences are recorded in [MISMATCHES.md](MISMATCHES.md).
 
 ## Base URL
-- Development / Mock: `http://127.0.0.1:8000`
 
----
+- Mock development server: `http://127.0.0.1:8000`
+- Contract paths are rooted at `/`; development proxies may add and remove a
+  prefix without changing these paths.
 
-## Feature Flags & Capabilities (`GET /health`)
-- The server advertises its contract version (`"1.1.0"`) and active capabilities via `features`[cite: 2].
-- Supported feature flags: `"queue"`, `"catalog"`, `"history"`, `"report"`[cite: 2].
-- Connected clients inspect `features` to render only the UI screens supported by the backend[cite: 2].
+## Capabilities (`GET /health`)
 
----
+Returns `status`, server `version`, `contract_version` (`"1.1.0"`), and the
+implemented feature list. The mock advertises `queue`, `catalog`, `history`,
+and `report` because each route has persistent behavior. A real server should
+advertise only capabilities it actually supports.
 
-## Endpoints Overview
+## Endpoints
 
-| Method & Path | Summary | Success Status | Error Responses | Feature Tier |
-|---|---|---|---|---|
-| `GET /health` | System health, version, and feature flags | `200 OK` | - | Core (v1.0) |
-| `GET /submissions` | List submissions with filters, date range, sort & pagination | `200 OK` | `422` | Core / Queue |
-| `POST /submissions` | Upload raw Excel file (multipart) | `202 Accepted` | `400`, `413`, `415`, `422` | Core (v1.0) |
-| `GET /submissions/{id}` | Get submission detail, proposal, and decision record | `200 OK` | `404`, `422` | Core (v1.0) |
-| `GET /submissions/{id}/file` | Download original binary file | `200 OK` | `404`, `422` | Core (v1.0) |
-| `GET /jobs/{job_id}` | Check asynchronous job progress | `200 OK` | `404`, `422` | Core (v1.0) |
-| `POST /submissions/{id}/decision` | Accept or reject proposal with reviewer identity | `200 OK` | `404`, `409`, `422` | Core / Queue |
-| `GET /catalog/datasets` | List catalog datasets with entry counts | `200 OK` | `422` | Catalog |
-| `GET /catalog/datasets/{dataset_id}/entries` | List entries under a dataset | `200 OK` | `404`, `422` | Catalog |
-| `GET /catalog/entries/{entry_id}` | Get full entry detail and schema columns | `200 OK` | `404` | Catalog |
-| `GET /catalog/entries/{entry_id}/history` | Audit log of changes for an entry | `200 OK` | `404`, `422` | History |
-| `GET /catalog/search` | Search datasets and column names | `200 OK` | `422` | Catalog |
-| `GET /reports/submissions` | Export submission records for report generation | `200 OK` | `422` | Report |
+| Method & path | Success | Contract errors | Feature |
+|---|---:|---|---|
+| `GET /health` | 200 | — | Core |
+| `GET /submissions` | 200 | 422 | Queue |
+| `POST /submissions` | 202 | 400, 413, 415, 422 | Core |
+| `GET /submissions/{submission_id}` | 200 | 404, 422 | Core |
+| `GET /submissions/{submission_id}/file` | 200 | 404, 422 | Core |
+| `GET /jobs/{job_id}` | 200 | 404, 422 | Core |
+| `POST /submissions/{submission_id}/decision` | 200 | 404, 409, 422 | Queue |
+| `GET /catalog/datasets` | 200 | 422 | Catalog |
+| `GET /catalog/datasets/{dataset_id}/entries` | 200 | 404, 422 | Catalog |
+| `GET /catalog/entries/{entry_id}` | 200 | 404, 422 | Catalog |
+| `GET /catalog/entries/{entry_id}/history` | 200 | 404, 422 | History |
+| `GET /catalog/search?q=...` | 200 | 422 | Catalog |
+| `GET /reports/submissions` | 200 | 422 | Report |
 
----
+Contract errors use `ErrorResponse`:
 
-## Core Business Rules & Behaviors
+```json
+{"code":"not_found","message":"Entry not found.","details":null}
+```
 
-1. **Asynchronous Uploads (`POST /submissions`)**:
-   - Accepts `multipart/form-data` containing a `file` (`.xls` or `.xlsx`) and an optional `sheet` name string.
-   - Rejects files over 50 MB with `413 Payload Too Large` and non-Excel files with `415 Unsupported Media Type`.
-   - Returns status code **`202 Accepted`** with a `Location` header pointing to `/jobs/{job_id}`.
+Request validation errors use the same top-level shape and place FastAPI's
+validation issue objects in `details`.
 
-2. **Pagination & Sorting (`GET /submissions`)**:
-   - Query parameters: `page` (min `1`, default `1`), `page_size` (min `1`, max `100`, default `10`), `sort` (`uploaded_at` or `-uploaded_at`, default `-uploaded_at`)[cite: 2].
-   - Date range filters: `uploaded_from` and `uploaded_to` (`YYYY-MM-DD`, inclusive UTC)[cite: 2].
-   - Filters: `status` (`processing`, `draft`, `accepted`, `merged`, `rejected`) and `verdict` (`new_dataset`, `new_source`, `enrichment`, `duplicate`, `needs_review`)[cite: 2].
-   - Returns `SubmissionPage` with item summaries including `matched_file_name` and `reason_short`[cite: 2].
+## Upload and jobs
 
-3. **Decisions & Reviewer Identity (`POST /submissions/{id}/decision`)**:
-   - Accepts `action` (`"accept"` or `"reject"`), optional manual `verdict`, optional `target_entry_id`, `note`, and `decided_by`[cite: 2].
-   - **`decided_by` is self-declared and not authenticated.** Servers store it verbatim in `DecisionRecord` and `HistoryEvent`[cite: 2].
-   - Accepting a `needs_review` proposal without specifying an explicit manual `verdict` returns **`409 Conflict`**.
-   - Submitting a decision on an already processed (`accepted` or `merged`) submission returns **`409 Conflict`**.
-   - Rejection (`"reject"`) sets status to `rejected` and leaves the catalog unchanged[cite: 2].
+`POST /submissions` accepts multipart `file` and optional `sheet`. Only valid
+`.xls` and `.xlsx` workbook content is accepted; maximum file size is 50 MiB.
+The uploaded bytes are stored unchanged and SHA-256 is calculated over those
+bytes. Success is `202 Accepted`, includes `job_id`, `submission_id`,
+`file_name`, `size_bytes`, `sha256`, and `status`, and sets `Location` to
+`/jobs/{job_id}`.
 
-4. **Atomic Catalog Updates (Accept Operations)**:
-   - `new_dataset`: Creates a new dataset and entry (`before = null`, `after = new_snapshot`)[cite: 2].
-   - `new_source`: Creates a new entry under an existing matched dataset[cite: 2].
-   - `enrichment`: Merges missing columns and years into the target entry[cite: 2].
-   - `duplicate`: No schema change (`before == after`)[cite: 2].
-   - Applied atomically inside a database transaction (`FOR UPDATE` locking)[cite: 2].
+`GET /jobs/{job_id}` returns `job_id`, `status` (`processing`, `completed`, or
+`failed`), `progress` (0–100), and `message`. The reference mock completes
+deterministic scenarios immediately; it does not run the real matching engine.
 
-5. **Report Exports (`GET /reports/submissions`)**:
-   - Supports filtering by status, verdict, date range, or explicit comma-separated `ids` (max 100)[cite: 2].
-   - Hard cap at 1000 rows. Requests exceeding 1000 matching rows return **`422 Unprocessable Entity`** (`code: "report_too_large"`)[cite: 2].
-   - Serves raw JSON structure; document/spreadsheet rendering (`.xlsx`, `.csv`) is handled client-side in the browser[cite: 2].
+## Listing, reports, and pagination
+
+Pagination uses `page` (minimum 1, default 1) and `page_size` (1–100, default
+10). `/submissions` supports `status`, `verdict`, inclusive UTC date filters
+`uploaded_from` / `uploaded_to` (`YYYY-MM-DD`), and `sort` (`uploaded_at` or
+`-uploaded_at`; default `-uploaded_at`). The response contains `items`, `total`,
+`page`, and `page_size`. Submission summaries include the upload metadata,
+status/verdict/similarity, and optional `matched_file_name` and `reason_short`.
+
+Dataset and entry lists use the same pagination response. Dataset summaries
+include their current `entry_count`. History is paginated and maps persisted
+snapshots to API fields `before` and `after`.
+
+`GET /reports/submissions` returns JSON (`generated_at`, `total`, `rows`) and
+supports `status`, `verdict`, date range, comma-separated `ids` (maximum 100),
+and `sort`. More than 1,000 matching rows returns 422 with
+`code: "report_too_large"`. File-format generation is a client responsibility.
+
+## Decisions and catalog effects
+
+`POST /submissions/{submission_id}/decision` accepts `action` (`accept` or
+`reject`), optional manual `verdict`, optional `target_entry_id`, `note`, and
+`decided_by`. `decided_by` is a self-declared display value, not authentication.
+Accepting a `needs_review` proposal without an explicit manual verdict returns
+409. A second decision on an already decided submission also returns 409.
+
+The mock applies these assumed transitions pending confirmation by the
+real-server owner:
+
+- `new_dataset`: create a dataset and entry; submission becomes `accepted`.
+- `new_source`: add an entry under the matched dataset; submission becomes
+  `accepted`.
+- `enrichment`: union new years and columns into the target; submission becomes
+  `merged`.
+- `duplicate`: leave catalog fields unchanged and record equal before/after
+  snapshots; submission becomes `merged`.
+- `reject`: submission becomes `rejected`; catalog is unchanged.
+
+Accept operations, decision recording, submission status, and history insertion
+are atomic in the SQLite reference store. This is not evidence that PostgreSQL
+locking or transaction behavior has been integration-tested.
+
+## Matching boundary
+
+The mock returns named deterministic fixtures only. The real server remains
+responsible for workbook interpretation, Indonesian meaning generation, schema
+card generation/validation, BGE-M3 embeddings, vector search, and LLM judgment.

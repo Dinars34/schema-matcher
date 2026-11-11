@@ -1,4 +1,6 @@
 {
   "status": "ok",
-  "version": "0.1.0"
+  "version": "0.1.0",
+  "contract_version": "1.1.0",
+  "features": ["queue", "catalog", "history", "report"]
 }

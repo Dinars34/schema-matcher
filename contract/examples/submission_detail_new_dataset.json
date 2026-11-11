@@ -3,6 +3,7 @@
   "file_name": "_sample_files_xlsx_sample_file_xlsx_512kb.xlsx",
   "sheet": "1",
   "size_bytes": 617630,
+  "sha256": "a0a0000000000000000000000000000000000000000000000000000000000000",
   "uploaded_at": "2026-11-10T13:48:03.623868+07:00",
   "status": "draft",
   "verdict": "new_dataset",
@@ -10,7 +11,7 @@
   "proposal": {
     "verdict": "new_dataset",
     "similarity": 0,
-    "reason": "Retrieved from PostgreSQL database record",
+    "reason": "Tidak ditemukan dataset yang cukup serupa.",
     "incoming": {
       "columns": [
         {

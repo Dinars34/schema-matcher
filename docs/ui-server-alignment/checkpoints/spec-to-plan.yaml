@@ -1,0 +1,218 @@
+metadata:
+  generated: "2026-11-11"
+  source_spec: "Derived from user request, contract/CONTRACT.md, schema-matcher-web-plan-v2.md, prototype, and supplied workflow image; no formal spec file exists"
+  target_plan: "docs/ui-server-alignment/plan.md"
+
+summary:
+  total_requirements: 13
+  covered_requirements: 13
+  missing_requirements: 0
+  coverage_percentage: 100.0
+
+requirements:
+  - req_id: "REQ-001"
+    req_description: "Safe, byte-identical Excel upload with selected sheet and actual preview"
+    priority: "P1"
+    plan_mapping:
+      phase: "Phase 1-3"
+      phase_name: "Contract, mock foundation, upload/progress"
+      items:
+        - item_id: "1.1"
+          description: "Canonical upload contract"
+        - item_id: "2.1"
+          description: "Persistence model"
+        - item_id: "2.2"
+          description: "Deterministic mock upload"
+        - item_id: "3.1"
+          description: "Real upload preview and API flow"
+  - req_id: "REQ-002"
+    req_description: "Refresh-safe job status and progress"
+    priority: "P1"
+    plan_mapping:
+      phase: "Phase 1-3"
+      phase_name: "Contract, mock foundation, upload/progress"
+      items:
+        - item_id: "1.1"
+          description: "Canonical job contract"
+        - item_id: "2.2"
+          description: "Persisted deterministic jobs"
+        - item_id: "3.1"
+          description: "Job polling UI"
+  - req_id: "REQ-003"
+    req_description: "Canonical proposal fields and review display"
+    priority: "P1"
+    plan_mapping:
+      phase: "Phase 1 and 3"
+      phase_name: "Contract and proposal review"
+      items:
+        - item_id: "1.1"
+          description: "Proposal schema"
+        - item_id: "1.2"
+          description: "Generated client types"
+        - item_id: "3.2"
+          description: "Proposal UI"
+  - req_id: "REQ-004"
+    req_description: "Supplied workflow represented without fake model execution"
+    priority: "P1"
+    plan_mapping:
+      phase: "Phase 2 and 6"
+      phase_name: "Mock scenarios and decision rules"
+      items:
+        - item_id: "2.2"
+          description: "Deterministic scenarios"
+        - item_id: "6.1"
+          description: "Workflow decision semantics"
+  - req_id: "REQ-005"
+    req_description: "Manual review and atomic decision state transitions"
+    priority: "P1"
+    plan_mapping:
+      phase: "Phase 1-6"
+      phase_name: "Decision contract, UI, and transaction"
+      items:
+        - item_id: "1.1"
+          description: "Decision contract"
+        - item_id: "2.1"
+          description: "Persistence"
+        - item_id: "3.2"
+          description: "Review decision UI"
+        - item_id: "4.1"
+          description: "Queue refresh"
+        - item_id: "6.1"
+          description: "Atomic decision service"
+  - req_id: "REQ-006"
+    req_description: "Consistent server-side list and queue counts"
+    priority: "P1"
+    plan_mapping:
+      phase: "Phase 4"
+      phase_name: "Submission list and needs-review queue"
+      items:
+        - item_id: "4.1"
+          description: "Server-authoritative filters and totals"
+  - req_id: "REQ-007"
+    req_description: "Distinct dataset and entry resources/identifiers"
+    priority: "P2"
+    plan_mapping:
+      phase: "Phase 2, 5, and 6"
+      phase_name: "Persistence, catalog UI, decision effects"
+      items:
+        - item_id: "2.1"
+          description: "Catalog persistence"
+        - item_id: "5.1"
+          description: "Dataset-to-entry navigation"
+        - item_id: "6.1"
+          description: "Catalog decision effects"
+  - req_id: "REQ-008"
+    req_description: "Persist and render contract-shaped history"
+    priority: "P2"
+    plan_mapping:
+      phase: "Phase 2, 5, and 6"
+      phase_name: "History persistence and display"
+      items:
+        - item_id: "2.1"
+          description: "History persistence"
+        - item_id: "5.2"
+          description: "History UI"
+        - item_id: "6.1"
+          description: "History writes in decision transaction"
+  - req_id: "REQ-009"
+    req_description: "Contract-filtered report JSON and safe browser CSV/XLSX"
+    priority: "P2"
+    plan_mapping:
+      phase: "Phase 7"
+      phase_name: "Report export"
+      items:
+        - item_id: "7.1"
+          description: "JSON endpoint and browser export"
+  - req_id: "REQ-010"
+    req_description: "Feature negotiation and configurable mock/real server swap"
+    priority: "P1"
+    plan_mapping:
+      phase: "Phase 1, 7, and 8"
+      phase_name: "Contract, health UI, conformance"
+      items:
+        - item_id: "1.1"
+          description: "Health feature contract"
+        - item_id: "1.2"
+          description: "Proxy/client configuration"
+        - item_id: "7.2"
+          description: "Capability UI"
+        - item_id: "8.2"
+          description: "Real-server conformance"
+  - req_id: "REQ-011"
+    req_description: "Consistent accessible UI state and feedback"
+    priority: "P1"
+    plan_mapping:
+      phase: "Phase 3-8"
+      phase_name: "Screen states and final polish"
+      items:
+        - item_id: "3.1"
+          description: "Upload/progress states"
+        - item_id: "3.2"
+          description: "Review states"
+        - item_id: "4.1"
+          description: "List/queue states"
+        - item_id: "5.1"
+          description: "Catalog states"
+        - item_id: "5.2"
+          description: "History states"
+        - item_id: "7.2"
+          description: "Health states"
+        - item_id: "8.1"
+          description: "Accessibility/usability"
+  - req_id: "REQ-012"
+    req_description: "Repeatable API, database, contract, and browser validation"
+    priority: "P1"
+    plan_mapping:
+      phase: "All phases"
+      phase_name: "Implementation and test evidence"
+      items:
+        - item_id: "2.1"
+          description: "Database tests"
+        - item_id: "2.2"
+          description: "Mock API tests"
+        - item_id: "3.1"
+          description: "Upload/progress browser tests"
+        - item_id: "3.2"
+          description: "Review browser tests"
+        - item_id: "4.1"
+          description: "Queue consistency tests"
+        - item_id: "5.2"
+          description: "History tests"
+        - item_id: "6.1"
+          description: "Transaction tests"
+        - item_id: "7.1"
+          description: "Export tests"
+        - item_id: "8.2"
+          description: "Mock/real conformance suite"
+  - req_id: "REQ-013"
+    req_description: "Generated API types and no misleading fallback data"
+    priority: "P1"
+    plan_mapping:
+      phase: "Phase 1-8"
+      phase_name: "Contract-derived client and typed UI"
+      items:
+        - item_id: "1.1"
+          description: "Canonical schemas"
+        - item_id: "1.2"
+          description: "Generated types"
+        - item_id: "3.1"
+          description: "Typed upload/progress"
+        - item_id: "3.2"
+          description: "Typed proposal"
+        - item_id: "5.1"
+          description: "Typed catalog"
+        - item_id: "5.2"
+          description: "Typed history"
+        - item_id: "7.1"
+          description: "Typed report"
+        - item_id: "7.2"
+          description: "Typed health"
+
+missing_requirements: []
+orphan_plan_items: []
+
+validation:
+  passed: true
+  errors: []
+  warnings:
+    - "Requirement IDs are planning identifiers synthesized from supplied materials; review them at the contract gate because no formal feature spec exists."

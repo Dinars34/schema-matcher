@@ -3,6 +3,7 @@
   "file_name": "_sample_files_xlsx_sample_file_xlsx_5120kb.xlsx",
   "sheet": "1",
   "size_bytes": 6031427,
+  "sha256": "a0a0000000000000000000000000000000000000000000000000000000000000",
   "uploaded_at": "2026-11-10T13:52:08.596986+07:00",
   "status": "draft",
   "verdict": "enrichment",
@@ -10,7 +11,7 @@
   "proposal": {
     "verdict": "enrichment",
     "similarity": 0.85,
-    "reason": "Retrieved from PostgreSQL database record",
+    "reason": "Kolom atau tahun baru dapat memperkaya entri yang cocok.",
     "incoming": {
       "columns": [
         {

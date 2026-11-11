@@ -1,0 +1,146 @@
+metadata:
+  generated: "2026-11-11"
+  source_plan: "docs/ui-server-alignment/plan.md"
+  target_tasks: "Tasks embedded in docs/ui-server-alignment/plan.md"
+
+summary:
+  total_plan_items: 14
+  covered_plan_items: 14
+  missing_plan_items: 0
+  coverage_percentage: 100.0
+  total_tasks_generated: 46
+  orphan_tasks: 0
+
+phases:
+  - phase_id: "Phase-1"
+    phase_name: "Foundational contract"
+    items:
+      - item_id: "1.1"
+        description: "Confirm canonical workflow and versioned API contract"
+        tasks: ["T001", "T002", "T003", "T004", "T005", "T008"]
+      - item_id: "1.2"
+        description: "Generate and use contract-derived client types"
+        tasks: ["T006", "T007", "T008"]
+  - phase_id: "Phase-2"
+    phase_name: "Persistence and deterministic mock"
+    items:
+      - item_id: "2.1"
+        description: "Create persistence model for workflow state"
+        tasks: ["T009", "T010", "T014"]
+      - item_id: "2.2"
+        description: "Make the mock deterministic and contract-shaped"
+        tasks: ["T011", "T012", "T013", "T014"]
+  - phase_id: "Phase-3"
+    phase_name: "P1 upload, progress, proposal review"
+    items:
+      - item_id: "3.1"
+        description: "Align upload and progress UI with API data"
+        tasks: ["T015", "T016", "T017", "T020"]
+      - item_id: "3.2"
+        description: "Render proposals and decisions from canonical contract"
+        tasks: ["T018", "T019", "T020"]
+  - phase_id: "Phase-4"
+    phase_name: "Submissions list and needs-review queue"
+    items:
+      - item_id: "4.1"
+        description: "Make filters and queue totals server-authoritative"
+        tasks: ["T021", "T022", "T023", "T024", "T025"]
+  - phase_id: "Phase-5"
+    phase_name: "Catalog navigation and history"
+    items:
+      - item_id: "5.1"
+        description: "Use distinct dataset and entry resources"
+        tasks: ["T026", "T027", "T028", "T032"]
+      - item_id: "5.2"
+        description: "Match history UI to event snapshots and pagination"
+        tasks: ["T029", "T030", "T031", "T032"]
+  - phase_id: "Phase-6"
+    phase_name: "Decision transaction and catalog rules"
+    items:
+      - item_id: "6.1"
+        description: "Implement decision semantics from supplied workflow"
+        tasks: ["T033", "T034", "T035", "T036"]
+  - phase_id: "Phase-7"
+    phase_name: "Report and connection/settings"
+    items:
+      - item_id: "7.1"
+        description: "Use report JSON contract and generate files in browser"
+        tasks: ["T037", "T038", "T039", "T041"]
+      - item_id: "7.2"
+        description: "Negotiate capabilities and show connection state"
+        tasks: ["T040", "T041"]
+  - phase_id: "Phase-8"
+    phase_name: "Usability, conformance, real-server swap"
+    items:
+      - item_id: "8.1"
+        description: "Complete consistent UI states and accessibility"
+        tasks: ["T042", "T046"]
+      - item_id: "8.2"
+        description: "Run conformance against mock and real server"
+        tasks: ["T043", "T044", "T045", "T046"]
+
+missing_plan_items: []
+orphan_tasks: []
+
+upstream_trace:
+  - plan_item: "1.1"
+    source_requirements: ["REQ-001", "REQ-002", "REQ-003", "REQ-005", "REQ-007", "REQ-008", "REQ-009", "REQ-010", "REQ-013"]
+    tasks: ["T001", "T002", "T003", "T004", "T005", "T008"]
+    full_trace: "Requirements → Plan 1.1 → T001-T005,T008"
+  - plan_item: "1.2"
+    source_requirements: ["REQ-003", "REQ-010", "REQ-013"]
+    tasks: ["T006", "T007", "T008"]
+    full_trace: "Requirements → Plan 1.2 → T006-T008"
+  - plan_item: "2.1"
+    source_requirements: ["REQ-001", "REQ-005", "REQ-007", "REQ-008", "REQ-012"]
+    tasks: ["T009", "T010", "T014"]
+    full_trace: "Requirements → Plan 2.1 → T009,T010,T014"
+  - plan_item: "2.2"
+    source_requirements: ["REQ-002", "REQ-003", "REQ-004", "REQ-012"]
+    tasks: ["T011", "T012", "T013", "T014"]
+    full_trace: "Requirements → Plan 2.2 → T011-T014"
+  - plan_item: "3.1"
+    source_requirements: ["REQ-001", "REQ-002", "REQ-011", "REQ-012", "REQ-013"]
+    tasks: ["T015", "T016", "T017", "T020"]
+    full_trace: "Requirements → Plan 3.1 → T015-T017,T020"
+  - plan_item: "3.2"
+    source_requirements: ["REQ-003", "REQ-005", "REQ-011", "REQ-012", "REQ-013"]
+    tasks: ["T018", "T019", "T020"]
+    full_trace: "Requirements → Plan 3.2 → T018-T020"
+  - plan_item: "4.1"
+    source_requirements: ["REQ-005", "REQ-006", "REQ-011", "REQ-012"]
+    tasks: ["T021", "T022", "T023", "T024", "T025"]
+    full_trace: "Requirements → Plan 4.1 → T021-T025"
+  - plan_item: "5.1"
+    source_requirements: ["REQ-007", "REQ-011", "REQ-012", "REQ-013"]
+    tasks: ["T026", "T027", "T028", "T032"]
+    full_trace: "Requirements → Plan 5.1 → T026-T028,T032"
+  - plan_item: "5.2"
+    source_requirements: ["REQ-008", "REQ-011", "REQ-012", "REQ-013"]
+    tasks: ["T029", "T030", "T031", "T032"]
+    full_trace: "Requirements → Plan 5.2 → T029-T032"
+  - plan_item: "6.1"
+    source_requirements: ["REQ-004", "REQ-005", "REQ-007", "REQ-008", "REQ-012"]
+    tasks: ["T033", "T034", "T035", "T036"]
+    full_trace: "Requirements → Plan 6.1 → T033-T036"
+  - plan_item: "7.1"
+    source_requirements: ["REQ-009", "REQ-011", "REQ-012", "REQ-013"]
+    tasks: ["T037", "T038", "T039", "T041"]
+    full_trace: "Requirements → Plan 7.1 → T037-T039,T041"
+  - plan_item: "7.2"
+    source_requirements: ["REQ-010", "REQ-011", "REQ-013"]
+    tasks: ["T040", "T041"]
+    full_trace: "Requirements → Plan 7.2 → T040,T041"
+  - plan_item: "8.1"
+    source_requirements: ["REQ-011", "REQ-012"]
+    tasks: ["T042", "T046"]
+    full_trace: "Requirements → Plan 8.1 → T042,T046"
+  - plan_item: "8.2"
+    source_requirements: ["REQ-010", "REQ-012", "REQ-013"]
+    tasks: ["T043", "T044", "T045", "T046"]
+    full_trace: "Requirements → Plan 8.2 → T043-T046"
+
+validation:
+  passed: true
+  errors: []
+  warnings: []

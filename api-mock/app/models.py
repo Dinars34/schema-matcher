@@ -1,10 +1,11 @@
 from datetime import datetime
-from enum import Enum, StrEnum
-from typing import Literal, Any
-from pydantic import BaseModel, Field
+from enum import StrEnum
+from typing import Any, Literal
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class Verdict(str, Enum):
+class Verdict(StrEnum):
     new_dataset = "new_dataset"
     new_source = "new_source"
     enrichment = "enrichment"
@@ -18,6 +19,12 @@ class SubmissionStatus(StrEnum):
     accepted = "accepted"
     merged = "merged"
     rejected = "rejected"
+
+
+class EntryStatus(StrEnum):
+    draft = "draft"
+    accepted = "accepted"
+    merged = "merged"
 
 
 class ColumnInfo(BaseModel):
@@ -47,17 +54,41 @@ class Proposal(BaseModel):
     matched: EntryRef | None = None
 
 
+class DecisionRecord(BaseModel):
+    action: Literal["accept", "reject"]
+    verdict: Verdict | None = None
+    target_entry_id: str | None = None
+    note: str | None = None
+    decided_by: str | None = Field(default=None, max_length=80)
+    decided_at: datetime
+
+
 class Submission(BaseModel):
     id: str
     file_name: str
     sheet: str | None = None
     size_bytes: int
+    sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     uploaded_at: datetime
     status: SubmissionStatus
     verdict: Verdict | None = None
     similarity: float | None = Field(default=None, ge=0, le=1)
     matched_file_name: str | None = None
     reason_short: str | None = Field(default=None, max_length=120)
+
+
+class SubmissionDetail(Submission):
+    proposal: Proposal | None = None
+    decision: DecisionRecord | None = None
+
+
+class UploadResponse(BaseModel):
+    job_id: str
+    submission_id: str
+    file_name: str
+    size_bytes: int
+    sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    status: Literal["processing"]
 
 
 class HealthResponse(BaseModel):
@@ -72,7 +103,6 @@ class HealthResponse(BaseModel):
     ]
 
 
-# Job status tracking for background processing
 class JobStatusResponse(BaseModel):
     job_id: str
     status: Literal["processing", "completed", "failed"]
@@ -80,14 +110,21 @@ class JobStatusResponse(BaseModel):
     message: str
 
 
-# Request body for accepting/rejecting a match proposal
 class DecisionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     action: Literal["accept", "reject"]
+    verdict: Verdict | None = None
+    target_entry_id: str | None = None
     note: str | None = None
+    decided_by: str | None = Field(default=None, max_length=80)
 
 
-health = HealthResponse(status="ok", version="0.1.0")
-print(health.model_dump_json())
+class DecisionResponse(BaseModel):
+    submission_id: str
+    status: SubmissionStatus
+    action_taken: Literal["accept", "reject"]
+    note: str | None = None
 
 
 class ErrorResponse(BaseModel):
@@ -97,21 +134,16 @@ class ErrorResponse(BaseModel):
 
 
 class SubmissionPage(BaseModel):
-    items: list[dict[str, Any]]
+    items: list[Submission]
     total: int
     page: int
     page_size: int
 
 
-class EntryStatus(StrEnum):
-    draft = "draft"
-    accepted = "accepted"
-    merged = "merged"
-
-
 class DatasetSummary(BaseModel):
     dataset_id: str
     name: str
+    entry_count: int
 
 
 class EntrySummary(BaseModel):
@@ -126,13 +158,13 @@ class EntrySummary(BaseModel):
 
 class EntryDetail(EntrySummary):
     dataset_name: str
-    columns: list[dict]  # or ColumnInfo list
+    columns: list[ColumnInfo]
 
 
 class EntrySnapshot(BaseModel):
     source: str | None = None
     years: list[int]
-    columns: list[dict]
+    columns: list[ColumnInfo]
 
 
 class HistoryEvent(BaseModel):
@@ -146,27 +178,6 @@ class HistoryEvent(BaseModel):
     after: EntrySnapshot | None = None
 
 
-class DecisionRecord(BaseModel):
-    action: Literal["accept", "reject"]
-    verdict: Verdict | None = None
-    target_entry_id: str | None = None
-    note: str | None = None
-    decided_by: str | None = Field(default=None, max_length=80)
-    decided_at: datetime
-
-
-class SubmissionDetail(Submission):
-    proposal: Proposal | None = None
-    decision: DecisionRecord | None = None
-
-
-class ReportData(BaseModel):
-    generated_at: datetime
-    total: int
-    rows: list[dict]
-
-
-# Paginated Responses for Catalog
 class DatasetPage(BaseModel):
     items: list[DatasetSummary]
     total: int
@@ -198,3 +209,9 @@ class ColumnHit(BaseModel):
 class CatalogSearchResult(BaseModel):
     datasets: list[DatasetSummary]
     columns: list[ColumnHit]
+
+
+class ReportData(BaseModel):
+    generated_at: datetime
+    total: int
+    rows: list[Submission]

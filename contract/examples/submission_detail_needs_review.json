@@ -3,6 +3,7 @@
   "file_name": "_sample_files_xlsx_sample_file_xlsx_2048kb.xlsx",
   "sheet": "1",
   "size_bytes": 2430675,
+  "sha256": "a0a0000000000000000000000000000000000000000000000000000000000000",
   "uploaded_at": "2026-11-10T13:52:03.382295+07:00",
   "status": "draft",
   "verdict": "needs_review",
@@ -10,7 +11,7 @@
   "proposal": {
     "verdict": "needs_review",
     "similarity": 0.65,
-    "reason": "Retrieved from PostgreSQL database record",
+    "reason": "Hasil pencocokan memerlukan peninjauan manual.",
     "incoming": {
       "columns": [
         {

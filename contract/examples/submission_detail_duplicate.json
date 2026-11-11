@@ -3,6 +3,7 @@
   "file_name": "_sample_files_xlsx_sample_file_xlsx_1024kb.xlsx",
   "sheet": "1",
   "size_bytes": 1225473,
+  "sha256": "a0a0000000000000000000000000000000000000000000000000000000000000",
   "uploaded_at": "2026-11-10T13:51:54.623817+07:00",
   "status": "draft",
   "verdict": "duplicate",
@@ -10,7 +11,7 @@
   "proposal": {
     "verdict": "duplicate",
     "similarity": 1,
-    "reason": "Retrieved from PostgreSQL database record",
+    "reason": "Data dan periode sudah tercakup pada entri yang cocok.",
     "incoming": {
       "columns": [
         {

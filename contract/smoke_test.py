@@ -1,119 +1,101 @@
+"""Read-only contract smoke checks; this script never uploads or decides."""
+
+import argparse
 import sys
+
 import httpx
 
-BASE_URL = "http://127.0.0.1:8000"
 
+def run_smoke_test(base_url: str, feature_tier: str) -> None:
+    required_features = {
+        "core": set(),
+        "queue": {"queue"},
+        "catalog": {"catalog"},
+        "history": {"history"},
+        "report": {"report"},
+    }[feature_tier]
+    with httpx.Client(base_url=base_url.rstrip("/"), timeout=10.0) as client:
+        health_response = client.get("/health")
+        assert health_response.status_code == 200
+        health = health_response.json()
+        assert health.get("status") == "ok"
+        assert health.get("contract_version") == "1.1.0"
+        assert required_features.issubset(set(health.get("features", [])))
 
-def run_smoke_test():
-    print(f"Starting complete API smoke test against {BASE_URL}...\n")
+        page_response = client.get(
+            "/submissions", params={"page": 1, "page_size": 5, "sort": "-uploaded_at"}
+        )
+        assert page_response.status_code == 200, page_response.text
+        page = page_response.json()
+        assert set(("items", "total", "page", "page_size")).issubset(page)
+        assert page["page"] == 1 and page["page_size"] == 5
+        assert isinstance(page["total"], int) and isinstance(page["items"], list)
+        for item in page["items"]:
+            assert {"id", "file_name", "uploaded_at", "status"}.issubset(item)
 
-    with httpx.Client(base_url=BASE_URL, timeout=10.0) as client:
-        # -------------------------------------------------------------
-        # 1. Test GET /health
-        # -------------------------------------------------------------
-        print("-> Testing GET /health")
-        res = client.get("/health")
-        assert res.status_code == 200, f"Health check failed: {res.text}"
-        assert res.json()["status"] == "ok"
-        print("   [PASS] GET /health -> Status 200 OK")
+        filtered_response = client.get(
+            "/submissions",
+            params={"page": 1, "page_size": 5, "status": "draft"},
+        )
+        assert filtered_response.status_code == 200, filtered_response.text
+        filtered = filtered_response.json()
+        assert all(item["status"] == "draft" for item in filtered["items"])
+        assert filtered["total"] <= page["total"]
 
-        # -------------------------------------------------------------
-        # 2. Test POST /submissions (Multipart Upload)
-        # -------------------------------------------------------------
-        print("\n-> Testing POST /submissions (Upload)[cite: 4]")
-        # Create dummy Excel binary payload
-        dummy_file_bytes = b"PK\x03\x04mock_excel_binary_content_for_testing"
-        files = {
-            "file": (
-                "smoke_test_data.xlsx",
-                dummy_file_bytes,
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        invalid_response = client.get("/submissions", params={"page": 0})
+        assert invalid_response.status_code == 422
+        assert {"code", "message", "details"}.issubset(invalid_response.json())
+
+        if "catalog" in required_features:
+            catalog_response = client.get(
+                "/catalog/datasets", params={"page": 1, "page_size": 5}
             )
-        }
-        data = {"sheet": "Sheet1"}
+            assert catalog_response.status_code == 200, catalog_response.text
+            catalog = catalog_response.json()
+            assert {"items", "total", "page", "page_size"}.issubset(catalog)
+            assert len(catalog["items"]) <= 5
+            if "history" in required_features and catalog["items"]:
+                dataset_id = catalog["items"][0]["dataset_id"]
+                entries_response = client.get(
+                    f"/catalog/datasets/{dataset_id}/entries",
+                    params={"page": 1, "page_size": 1},
+                )
+                assert entries_response.status_code == 200
+                entries = entries_response.json()["items"]
+                if entries:
+                    history_response = client.get(
+                        f"/catalog/entries/{entries[0]['entry_id']}/history",
+                        params={"page": 1, "page_size": 1},
+                    )
+                    assert history_response.status_code == 200
+                    assert {"items", "total", "page", "page_size"}.issubset(
+                        history_response.json()
+                    )
 
-        res = client.post("/submissions", files=files, data=data)
-        assert res.status_code == 202, f"Create submission failed: {res.text}"
+        if "report" in required_features:
+            report_response = client.get(
+                "/reports/submissions",
+                params={"status": "draft", "sort": "-uploaded_at"},
+            )
+            assert report_response.status_code == 200, report_response.text
+            report = report_response.json()
+            assert {"generated_at", "total", "rows"}.issubset(report)
+            assert report["total"] == len(report["rows"])
 
-        sub_res = res.json()
-        job_id = sub_res.get("job_id")
-        submission_id = sub_res.get("submission_id")
-        assert job_id and sub_res.get("sha256"), "Missing job_id or sha256 in response"
-        print(f"   [PASS] POST /submissions -> Status 202 Accepted")
-        print(f"          Created Submission ID: {submission_id}")
-        print(f"          Created Job ID: {job_id}")
-
-        # -------------------------------------------------------------
-        # 3. Test GET /jobs/{job_id}
-        # -------------------------------------------------------------
-        print(f"\n-> Testing GET /jobs/{job_id}[cite: 4]")
-        res = client.get(f"/jobs/{job_id}")
-        assert res.status_code == 200, f"Get job status failed: {res.text}"
-        job_data = res.json()
-        assert "status" in job_data and "progress" in job_data
-        print(
-            f"   [PASS] GET /jobs/{job_id} -> Status 200 OK (State: {job_data['status']}, Progress: {job_data['progress']}%)"
-        )
-
-        # -------------------------------------------------------------
-        # 4. Test GET /submissions (List with Pagination)
-        # -------------------------------------------------------------
-        print("\n-> Testing GET /submissions (List)[cite: 4]")
-        res = client.get("/submissions?page=1&page_size=10")
-        assert res.status_code == 200, f"List submissions failed: {res.text}"
-        page_data = res.json()
-        assert "items" in page_data and "total" in page_data
-        assert page_data["total"] >= 1, "Expected at least 1 submission in the database"
-        print(
-            f"   [PASS] GET /submissions -> Status 200 OK (Total items found: {page_data['total']})"
-        )
-
-        # -------------------------------------------------------------
-        # 5. Test GET /submissions/{submission_id} (Detail)
-        # -------------------------------------------------------------
-        print(f"\n-> Testing GET /submissions/{submission_id}[cite: 4]")
-        res = client.get(f"/submissions/{submission_id}")
-        assert res.status_code == 200, f"Get submission detail failed: {res.text}"
-        detail_data = res.json()
-        assert detail_data["id"] == submission_id
-        print(f"   [PASS] GET /submissions/{submission_id} -> Status 200 OK")
-
-        # -------------------------------------------------------------
-        # 6. Test POST /submissions/{submission_id}/decision
-        # -------------------------------------------------------------
-        print(f"\n-> Testing POST /submissions/{submission_id}/decision[cite: 4]")
-        decision_payload = {"action": "accept", "note": "Automated smoke test approval"}
-        res = client.post(
-            f"/submissions/{submission_id}/decision", json=decision_payload
-        )
-        assert res.status_code == 200, f"Decision submission failed: {res.text}"
-        decision_data = res.json()
-        assert decision_data["status"] == "accepted"
-        print(
-            f"   [PASS] POST /submissions/{submission_id}/decision -> Status 200 OK (Updated status: accepted)"
-        )
-
-        # -------------------------------------------------------------
-        # 7. Test GET /submissions/{submission_id}/file (Byte Download)
-        # -------------------------------------------------------------
-        print(f"\n-> Testing GET /submissions/{submission_id}/file[cite: 4]")
-        res = client.get(f"/submissions/{submission_id}/file")
-        assert res.status_code == 200, f"File download failed: {res.text}"
-        assert res.content == dummy_file_bytes, (
-            "Downloaded file bytes do not match uploaded content!"
-        )
-        print(
-            "   [PASS] GET /submissions/{submission_id}/file -> Status 200 OK (Byte-identical round-trip verified)"
-        )
-
-    print("\n==================================================")
-    print(" SUCCESS: All endpoints successfully tested & verified!")
-    print("==================================================")
+    print(f"PASS: read-only v1.1.0 smoke checks against {base_url}")
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--base-url", default="http://127.0.0.1:8000")
+    parser.add_argument(
+        "--feature-tier",
+        choices=("core", "queue", "catalog", "history", "report"),
+        default="queue",
+    )
+    args = parser.parse_args()
     try:
-        run_smoke_test()
-    except Exception as e:
-        print(f"\n[X] SMOKE TEST FAILURE: {e}", file=sys.stderr)
+        run_smoke_test(args.base_url, args.feature_tier)
+    except Exception as exc:
+        print(f"FAIL: {exc}", file=sys.stderr)
         sys.exit(1)
